@@ -60,8 +60,9 @@ podman logs -f ingestion_api
 ---
 
 ## 5. Resilience Testing (The "Chaos" Component)
-Prove that the system survives component failure.
+Prove that the system survives component failure and data anomalies.
 
+### A. Consumer Failure Logic
 1.  **Step:** Stop the worker container while Locust is running:
     ```bash
     podman stop ingestion_worker
@@ -71,7 +72,22 @@ Prove that the system survives component failure.
     ```bash
     podman start ingestion_worker
     ```
-4.  **Result:** The worker will drain the "Backlog" accumulated during the downtime. This proves the **Decoupled Persistence** of the architecture.
+4.  **Result:** The worker will drain the "Backlog" accumulated during the downtime.
+
+### B. Poison Pill / DLQ Verification
+1.  **Step:** Send a "Malformed" manual request (e.g., physically impossible reading):
+    ```bash
+    curl -X POST http://localhost:8000/ingest -H "Content-Type: application/json" -d '{"device_id": "STRESS-TEST", "type": "VIBRATION", "reading": 999.9}'
+    ```
+2.  **Observation:** Watch the worker logs:
+    ```bash
+    podman logs -f ingestion_worker
+    ```
+    You should see: `[🛡️ DLQ] Shunting message ... Reason: PHYSICAL_IMPOSSIBILITY_THRESHOLD`.
+3.  **Validation:** Check the Redis Stream directly (if Redis CLI is available):
+    ```bash
+    podman exec -it ingestion_broker redis-cli xread streams telemetry_dlq 0
+    ```
 
 ---
 *Created by Gaurav Sharma — Solutions Architect*

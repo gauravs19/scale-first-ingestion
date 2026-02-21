@@ -4,6 +4,7 @@
 broker:
   url: "redis://redis:6379"
   stream_name: "telemetry_stream"
+  dlq_stream_name: "telemetry_dlq"
   group_name: "processor_group"
   consumer_name: "worker_1"
 

@@ -60,6 +60,10 @@ Services are designed to be "Disposable." If a worker crashes, the Redis Consume
 - **Decision:** Instrument every service with Prometheus Counter/Histogram.
 - **Context:** In enterprise systems, you cannot manage what you do not measure. These metrics feed into HPA (Horizontal Pod Autoscalers) in K8s.
 
+### ADR 006: Dead Letter Queue (DLQ) for Poison Pill Resilience
+- **Decision:** Implement a secondary stream `telemetry_dlq` for failed processing.
+- **Context:** Decoupled systems must handle "bad data" without crashing consumers. Shunting malformed or physically impossible readings to a DLQ allows engineers to audit the "Why" without stopping the ingestion pipeline.
+
 ---
 *Authored by Gaurav Sharma — Solutions Architect*
 
