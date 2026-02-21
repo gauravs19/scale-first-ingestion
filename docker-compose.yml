@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ingestion_broker
+    ports:
+      - "6379:6379"
+    networks:
+      - ingestion_net
+
+  ingestor:
+    build:
+      context: .
+      dockerfile: ingestor/Dockerfile
+    container_name: ingestion_api
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - ingestion_net
+
+  processor:
+    build:
+      context: .
+      dockerfile: processor/Dockerfile
+    container_name: ingestion_worker
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    networks:
+      - ingestion_net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ingestion_metrics
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - ingestion_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ingestion_dashboard
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - ingestion_net
+
+  locust:
+    image: locustio/locust
+    container_name: ingestion_load_test
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./locust:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --host http://ingestor:8000 --autostart -u 10 -r 2
+    networks:
+      - ingestion_net
+
+networks:
+  ingestion_net:
+    driver: bridge

@@ -1,0 +1,30 @@
+# Enterprise Settings for IoT Ingestion
+# Allows for environment parity (Dev / Prod / Test)
+
+broker:
+  url: "redis://redis:6379"
+  stream_name: "telemetry_stream"
+  group_name: "processor_group"
+  consumer_name: "worker_1"
+
+ingestor:
+  port: 8000
+  host: "0.0.0.0"
+  log_level: "info"
+  metrics_port: 8000  # Exposed via ASGI app mount
+
+processor:
+  vibration_threshold: 22.0
+  batch_size: 10
+  read_block_ms: 1000
+  metrics_port: 8001
+  retry_limit: 3
+  backoff_seconds: 5
+
+governance:
+  allowed_types:
+    - "VIBRATION"
+    - "TEMPERATURE"
+    - "HUMIDITY"
+  min_reading: -50.0
+  max_reading: 500.0
